@@ -68,11 +68,30 @@ function PowerOff_Compute_Module
 function Unassign_Source_Server_Profile
 {
     Write-Output "Unassigning Server Profile '$SourceProfile'" | Timestamp
-    Get-HPOVServer -Name "$Location" | Stop-HPOVServer -Confirm:$false | Wait-HPOVTaskComplete
-    Write-Output "Compute Module '$Location' Powered OFF" | Timestamp
+    Get-HPOVServerProfile -Name "$SourceProfile" | New-HPOVServerProfileAssign -Unassigned | Wait-HPOVTaskComplete
+    Write-Output "Server Profile '$SourceProfile' Unassigned" | Timestamp
+    #
+    # Sleep for 10 seconds to allow compute module to quiesce
+    #
+    Start-Sleep 10
 }
 
 
+function Assign_Target_Server_Profile
+{
+    Write-Output "Assigning Server Profile '$TargetProfile'" | Timestamp
+    #Get-HPOVServerProfile -Name "$TargetProfile" | New-HPOVServerProfileAssign -ApplianceConnection $ApplianceConnection | Wait-HPOVTaskComplete
+    Get-HPOVServerProfile -Name "$TargetProfile" | New-HPOVServerProfileAssign -Server "$Location" -ApplianceConnection $ApplianceConnection | Wait-HPOVTaskComplete
+    Write-Output "Server Profile '$TargetProfile' Assigned" | Timestamp
+}
+
+
+function PowerOn_Compute_Module
+{
+    Write-Output "Powering ON Compute Module Located at '$Location'" | Timestamp
+    Get-HPOVServer -Name "$Location" | Start-HPOVServer | Wait-HPOVTaskComplete
+    Write-Output "Compute Module '$Location' Powered ON" | Timestamp
+}
 
 
 ##############################################################################
@@ -107,14 +126,16 @@ Write-Output "HPE Synergy Compute Module Personality Change Beginning..." | Time
 #
 # Identify the Synergy Compute Module based on the Source Server Profile
 #
-$Profile = Get-HPOVServerProfile -Name $SourceProfile
-$Enc = Send-HPOVRequest -uri $Profile.enclosureUri -method GET
-$EncBay = $Profile.enclosureBay
-$EncName = $Enc.name
-$Location = "$EncName, bay $EncBay"
+#$Profile = Get-HPOVServerProfile -Name $SourceProfile
+#$Enc = Send-HPOVRequest -uri $Profile.enclosureUri -method GET
+#$EncBay = $Profile.enclosureBay
+#$EncName = $Enc.name
+#$Location = "$EncName, bay $EncBay"
+$Location = "gse-rose-st022, bay 4"
 
-PowerOff_Compute_Module
-Unassign_Source_Server_Profile
-
+#PowerOff_Compute_Module
+#Unassign_Source_Server_Profile
+Assign_Target_Server_Profile
+#PowerOn_Compute_Module
 
 Write-Output "HPE Synergy Compute Module Personality Change Complete" | Timestamp
