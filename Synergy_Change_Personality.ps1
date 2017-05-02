@@ -37,20 +37,20 @@ param
 (
     [Parameter (Mandatory, HelpMessage = "Provide the IP Address of the Synergy Composer.")]
     [ValidateNotNullorEmpty()]
-	[IPAddress]$Appliance,
-
-	[Parameter (Mandatory, HelpMessage = "Provide the Administrator Username.")]
-	[ValidateNotNullorEmpty()]
+    [IPAddress]$Appliance,
+    
+    [Parameter (Mandatory, HelpMessage = "Provide the Administrator Username.")]
+    [ValidateNotNullorEmpty()]
     [String]$Username,
-
-	[Parameter (Mandatory, HelpMessage = "Provide the Administrator's Password.")]
+    
+    [Parameter (Mandatory, HelpMessage = "Provide the Administrator's Password.")]
     [ValidateNotNullorEmpty()]
     [SecureString]$Password,
-
-	[Parameter (Mandatory, HelpMessage = "Provide the Source Server Profile Name.")]
+    
+    [Parameter (Mandatory, HelpMessage = "Provide the Source Server Profile Name.")]
     [ValidateNotNullorEmpty()]
     [String]$SourceProfile,
-
+    
     [Parameter (Mandatory, HelpMessage = "Provide the Target Server Profile Name.")]
     [ValidateNotNullorEmpty()]
     [String]$TargetProfile
