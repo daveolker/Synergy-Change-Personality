@@ -32,71 +32,47 @@ THE SOFTWARE.
 #>
 
 
-function Add_Remote_Enclosures
+[CmdletBinding()]
+param
+(
+    [Parameter (Mandatory, HelpMessage = "Provide the IP Address of the Synergy Composer.")]
+    [ValidateNotNullorEmpty()]
+	[IPAddress]$Appliance,
+
+	[Parameter (Mandatory, HelpMessage = "Provide the Administrator Username.")]
+	[ValidateNotNullorEmpty()]
+    [String]$Username,
+
+	[Parameter (Mandatory, HelpMessage = "Provide the Administrator's Password.")]
+    [ValidateNotNullorEmpty()]
+    [SecureString]$Password,
+
+	[Parameter (Mandatory, HelpMessage = "Provide the Source Server Profile Name.")]
+    [ValidateNotNullorEmpty()]
+    [String]$SourceProfile,
+
+    [Parameter (Mandatory, HelpMessage = "Provide the Target Server Profile Name.")]
+    [ValidateNotNullorEmpty()]
+    [String]$TargetProfile
+)
+
+
+function PowerOff_Compute_Module
 {
-    Write-Output "Adding Remote Enclosures" | Timestamp
-    Send-HPOVRequest -uri "/rest/enclosures" -method POST -body @{'hostname' = 'fe80::2:0:9:7%eth2'} | Wait-HPOVTaskComplete
-    Write-Output "Remote Enclosures Added" | Timestamp
+    Write-Output "Powering OFF Compute Module Located at '$Location'" | Timestamp
+    Get-HPOVServer -Name "$Location" | Stop-HPOVServer -Confirm:$false | Wait-HPOVTaskComplete
+    Write-Output "Compute Module '$Location' Powered OFF" | Timestamp
 }
 
 
-function Configure_SAN_Managers
+function Unassign_Source_Server_Profile
 {
-    Write-Output "Configuring SAN Managers" | Timestamp
-    Add-HPOVSanManager -Hostname 172.18.20.1 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword hpinvent! -SnmpAuthProtocol sha -SnmpPrivPassword hpinvent! -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
-    Add-HPOVSanManager -Hostname 172.18.20.2 -SnmpUserName dcs-SHA-AES128 -SnmpAuthLevel AuthAndPriv -SnmpAuthPassword hpinvent! -SnmpAuthProtocol sha -SnmpPrivPassword hpinvent! -SnmpPrivProtocol aes-128 -Type Cisco -Port 161 | Wait-HPOVTaskComplete
-    Write-Output "SAN Manager Configuration Complete" | Timestamp
+    Write-Output "Unassigning Server Profile '$SourceProfile'" | Timestamp
+    Get-HPOVServer -Name "$Location" | Stop-HPOVServer -Confirm:$false | Wait-HPOVTaskComplete
+    Write-Output "Compute Module '$Location' Powered OFF" | Timestamp
 }
 
 
-function Configure_Networks
-{
-    ##########################################################################
-    #
-    # Process variables in the Populate_HPE_Synergy-Params.txt file.
-    #
-    ##########################################################################
-    New-Variable -Name config_file -Value .\Populate_HPE_Synergy-Params.txt
-
-    if (Test-Path $config_file) {    
-        Get-Content $config_file | Where-Object { !$_.StartsWith("#") } | Foreach-Object {
-            $var = $_.Split('=')
-            New-Variable -Name $var[0] -Value $var[1]
-        }
-    } else { 
-        Write-Output "Configuration file '$config_file' not found.  Exiting." | Timestamp
-        Exit
-    }
-    
-    Write-Output "Adding IPv4 Subnets" | Timestamp
-    New-HPOVAddressPoolSubnet -Domain "mgmt.lan" -Gateway $prod_gateway -NetworkId $prod_subnet -SubnetMask $prod_mask
-    New-HPOVAddressPoolSubnet -Domain "deployment.lan" -Gateway $deploy_gateway -NetworkId $deploy_subnet -SubnetMask $deploy_mask
-    
-    Write-Output "Adding IPv4 Address Pool Ranges" | Timestamp
-    Get-HPOVAddressPoolSubnet -NetworkId $prod_subnet | New-HPOVAddressPoolRange -Name Mgmt -Start $prod_pool_start -End $prod_pool_end
-    Get-HPOVAddressPoolSubnet -NetworkId $deploy_subnet | New-HPOVAddressPoolRange -Name Deployment -Start $deploy_pool_start -End $deploy_pool_end
-    
-    Write-Output "Adding Networks" | Timestamp
-    New-HPOVNetwork -Name "ESX Mgmt" -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 1131 -VLANType Tagged
-    New-HPOVNetwork -Name "ESX vMotion" -MaximumBandwidth 20000 -Purpose VMMigration -Type Ethernet -TypicalBandwidth 2500 -VlanId 1132 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1101 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1101 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1102 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1102 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1103 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1103 -VLANType Tagged
-    New-HPOVNetwork -Name Prod_1104 -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1104 -VLANType Tagged
-    New-HPOVNetwork -Name Deployment -MaximumBandwidth 20000 -Purpose General -Type Ethernet -TypicalBandwidth 2500 -VlanId 1500 -VLANType Tagged
-    Set-HPOVNetwork -InputObject Deployment -IPv4Subnet $deploy_subnet
-    New-HPOVNetwork -Name Mgmt -MaximumBandwidth 20000 -Purpose Management -Type Ethernet -TypicalBandwidth 2500 -VlanId 100 -VLANType Tagged
-    Set-HPOVNetwork -InputObject Mgmt -IPv4Subnet $prod_subnet
-    New-HPOVNetwork -Name "SAN A FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN20 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN B FC" -Type "Fibre Channel" -FabricType FabricAttach -LinkStabilityTime 30 -ManagedSan VSAN21 -MaximumBandwidth 20000 -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN A FCoE" -VlanId 10 -ManagedSan VSAN10 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
-    New-HPOVNetwork -Name "SAN B FCoE" -VlanId 11 -ManagedSan VSAN11 -MaximumBandwidth 20000 -Type FCoE -TypicalBandwidth 8000
-    
-    Write-Output "Adding Network Sets" | Timestamp
-    New-HPOVNetworkSet -Name Prod -Networks Prod_1101, Prod_1102, Prod_1103, Prod_1104 -MaximumBandwidth 20000 -TypicalBandwidth 2500
-    
-    Write-Output "Networking Configuration Complete" | Timestamp
-}
 
 
 ##############################################################################
@@ -116,7 +92,7 @@ if (-not $ConnectedSessions)
 
     if (-not $ConnectedSessions)
     {
-        Write-Output "Login to Synergy Appliance failed.  Exiting."
+        Write-Output "Login to the Synergy Composer failed.  Exiting."
         Exit
     } 
     else {
@@ -126,9 +102,19 @@ if (-not $ConnectedSessions)
 
 filter Timestamp {"$(Get-Date -Format G): $_"}
 
-Write-Output "Configuring HPE Synergy Appliance" | Timestamp
+Write-Output "HPE Synergy Compute Module Personality Change Beginning..." | Timestamp
 
-Add_Firmware_Bundle
+#
+# Identify the Synergy Compute Module based on the Source Server Profile
+#
+$Profile = Get-HPOVServerProfile -Name $SourceProfile
+$Enc = Send-HPOVRequest -uri $Profile.enclosureUri -method GET
+$EncBay = $Profile.enclosureBay
+$EncName = $Enc.name
+$Location = "$EncName, bay $EncBay"
+
+PowerOff_Compute_Module
+Unassign_Source_Server_Profile
 
 
-Write-Output "HPE Synergy Appliance Configuration Complete" | Timestamp
+Write-Output "HPE Synergy Compute Module Personality Change Complete" | Timestamp
