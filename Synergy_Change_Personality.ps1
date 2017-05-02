@@ -80,7 +80,6 @@ function Unassign_Source_Server_Profile
 function Assign_Target_Server_Profile
 {
     Write-Output "Assigning Server Profile '$TargetProfile'" | Timestamp
-    #Get-HPOVServerProfile -Name "$TargetProfile" | New-HPOVServerProfileAssign -ApplianceConnection $ApplianceConnection | Wait-HPOVTaskComplete
     Get-HPOVServerProfile -Name "$TargetProfile" | New-HPOVServerProfileAssign -Server "$Location" -ApplianceConnection $ApplianceConnection | Wait-HPOVTaskComplete
     Write-Output "Server Profile '$TargetProfile' Assigned" | Timestamp
 }
@@ -126,16 +125,15 @@ Write-Output "HPE Synergy Compute Module Personality Change Beginning..." | Time
 #
 # Identify the Synergy Compute Module based on the Source Server Profile
 #
-#$Profile = Get-HPOVServerProfile -Name $SourceProfile
-#$Enc = Send-HPOVRequest -uri $Profile.enclosureUri -method GET
-#$EncBay = $Profile.enclosureBay
-#$EncName = $Enc.name
-#$Location = "$EncName, bay $EncBay"
-$Location = "gse-rose-st022, bay 4"
+$Profile = Get-HPOVServerProfile -Name $SourceProfile
+$Enc = Send-HPOVRequest -uri $Profile.enclosureUri -method GET
+$EncBay = $Profile.enclosureBay
+$EncName = $Enc.name
+$Location = "$EncName, bay $EncBay"
 
-#PowerOff_Compute_Module
-#Unassign_Source_Server_Profile
+PowerOff_Compute_Module
+Unassign_Source_Server_Profile
 Assign_Target_Server_Profile
-#PowerOn_Compute_Module
+PowerOn_Compute_Module
 
 Write-Output "HPE Synergy Compute Module Personality Change Complete" | Timestamp
