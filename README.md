@@ -28,4 +28,4 @@ This PowerShell script requires the HPE OneView PowerShell library found here: h
 It is assumed that the "Source" and "Target" server profiles exists on the Synergy Composer or OneView instance and that both server profiles have been tested to confirm they are able to be successfully applied to the target server without issues.  It is also assumed that the existing profiles contain any required boot settings, BIOS settings, etc.  The goal is to allow a single Compute Module to run different workloads at different times of the day or week with little or no user intervention.
 
 # Sample Command Syntax
-Synergy_Change_Personality.ps1 -Appliance <IP ADDR> -Username Administrator -SourceProfile ESX_Server -TargetProfile Windows_Server
+Synergy_Change_Personality.ps1 -Appliance '<IP ADDR>' -Username Administrator -SourceProfile ESX_Server -TargetProfile Windows_Server
