@@ -7,14 +7,14 @@ The Synergy_Change_Personality script does the following:
 * Connects to an HPE Synergy Composer (or HPE OneView instance)
 * Identifies the target compute module based on the "Source Server Profile" parameter
 * Gracefully powers off the compute module
-* Unassigns the existing Server Profile from the Compute Module
+* Un-assigns the existing Server Profile from the Compute Module
 * Assigns the new Server Profile to the same Compute Module
 * Powers on the compute module
 
 The required parameters on the command-line are:
 ```
 Appliance              IPv4 Address of the Synergy Composer or OneView Instance
-Username               Administative User (Administrator)
+Username               Administrative User (Administrator)
 SourceProfile          Server Profile currently assigned to Compute Module
 TargetProfile          Server Profile desired to be assigned to Compute Module
 
